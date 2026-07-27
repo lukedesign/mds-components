@@ -1,0 +1,29 @@
+{
+  "name": "@mds/components-react-native",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Componentes React Native do Design System multimarcas — estilizados 100% por tokens do @mds/tokens.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mds/components-core": "*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.72.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "react-native": "^0.79.0",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@mds/components",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Componentes do Design System multimarcas (MDS) — Web (React) e React Native, consumindo @mds/tokens.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "sync-tokens": "node scripts/sync-button-tokens.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "npm run dev --workspace=@mds/playground"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
