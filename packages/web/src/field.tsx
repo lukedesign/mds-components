@@ -1,4 +1,11 @@
-import { useCallback, useState, type CSSProperties, type FocusEvent, type ReactNode } from 'react';
+import {
+  useCallback,
+  useState,
+  type ComponentPropsWithoutRef,
+  type CSSProperties,
+  type FocusEvent,
+  type ReactNode,
+} from 'react';
 import {
   deriveInputState,
   resolveFieldActionColors,
@@ -116,6 +123,30 @@ export const FIELD_CSS = `
 }
 `;
 
+/** CSS compartilhado de Checkbox/Radio. */
+export const SELECTION_CSS = `
+.mds-selection {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  position: relative;
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+.mds-selection:disabled {
+  cursor: not-allowed;
+}
+.mds-selection:focus-visible {
+  outline: none;
+}
+`;
+
 export interface FieldInteraction {
   state: InputState;
   focused: boolean;
@@ -204,6 +235,14 @@ export function FieldFrame(props: {
   /** Altura fixa do campo (default metrics.fieldHeight); null = flexível. */
   fieldHeight?: number | null;
   fieldAlignItems?: CSSProperties['alignItems'];
+  /** Borda tracejada (Input/dropzone) — usa border real em vez de box-shadow. */
+  fieldDashed?: boolean;
+  /** Campo sem chrome próprio (Input/code e Input/stepper: as caixas internas
+   * é que desenham bg/borda) — vira só uma linha com gap. */
+  fieldBare?: boolean;
+  /** Empilha o conteúdo do campo em coluna centrada (Input/dropzone). */
+  fieldColumn?: boolean;
+  fieldProps?: ComponentPropsWithoutRef<'div'>;
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
@@ -246,23 +285,34 @@ export function FieldFrame(props: {
         </label>
       )}
       <div
+        {...props.fieldProps}
         className="mds-field__box"
         style={{
           width: '100%',
+          boxSizing: 'border-box',
           height: props.fieldHeight === null ? undefined : (props.fieldHeight ?? metrics.fieldHeight),
           flex: props.fieldHeight === null ? 1 : undefined,
           alignItems: props.fieldAlignItems,
-          padding: metrics.fieldPadding,
-          gap: metrics.fieldGap,
-          borderRadius: chrome.radiusValue,
-          background: styles.bgColor,
-          boxShadow: `inset 0 0 0 ${styles.strokeWidth}px ${styles.strokeColor}`,
+          flexDirection: props.fieldColumn ? 'column' : undefined,
+          justifyContent: props.fieldColumn ? 'center' : undefined,
+          ...(props.fieldBare
+            ? { gap: metrics.columnGap }
+            : {
+                padding: metrics.fieldPadding,
+                gap: metrics.fieldGap,
+                borderRadius: chrome.radiusValue,
+                background: styles.bgColor,
+                ...(props.fieldDashed
+                  ? { border: `${styles.strokeWidth}px dashed ${styles.strokeColor}` }
+                  : { boxShadow: `inset 0 0 0 ${styles.strokeWidth}px ${styles.strokeColor}` }),
+              }),
           color: styles.textColor,
           fontFamily: metrics.textTypography.fontFamily,
           fontSize: metrics.textTypography.fontSize,
           fontWeight: metrics.textTypography.fontWeight as CSSProperties['fontWeight'],
           lineHeight: String(metrics.textTypography.lineHeight),
           ['--mds-field-placeholder' as string]: styles.placeholderColor,
+          ...props.fieldProps?.style,
         }}
       >
         {props.children}

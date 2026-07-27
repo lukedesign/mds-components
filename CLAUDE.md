@@ -116,9 +116,30 @@ Os componentes **nunca importam uma marca**: o objeto de tokens entra via
     (`paragraph.medium`), helper 12/16; coluna com gap 4 e px 8.
   - Ícones funcionais (olho, info, alerta) embutidos em
     `web/src/icons.tsx` com os paths exatos exportados do Figma.
-  - Fora desta rodada (páginas já inventariadas no Figma): Input/dropdown
-    (só o campo-gatilho; lista não desenhada), code, stepper, dropzone,
-    Checkbox, Radio, Selector, Step Helper.
+  - **Rodadas seguintes (mesma data) — compostos e seleção**, todos web+RN:
+    - `InputDropdown`: só o campo-gatilho (chevron de 32px que gira 180° com
+      `open`; lista aberta = estado ativo). **A lista suspensa não está
+      desenhada no Figma** — fica a cargo do consumidor por enquanto.
+    - `InputCode`: 4 ou 6 caixas de 44px (gap `s-small`), auto-avanço,
+      estado por caixa (focada=ativo, com dígito=preenchido).
+    - `InputStepper`: botões circulares de 32px com as cores do Button
+      preenchido (via `resolveButtonStyles`), campo central min-w 46, linha
+      com gap `s-xLarge` e px 12; valor 0 usa cor de placeholder.
+    - `Dropzone`: borda TRACEJADA (border real, não box-shadow), conteúdo em
+      coluna centrada (clipe + texto), dragover=sobre, contador de arquivos
+      no helper. RN sem drag&drop (onPress abre o picker do app).
+    - `Checkbox` (24px, raio `radii.<escala>.small`; normal bg `surface` +
+      2px `subtleOnSurface`; selecionado/indeterminado bg `primary`) e
+      `Radio` (circular; normal bg `backgroundSubtle` + 2px `outlineMuted` —
+      borda de normal DIFERENTE do checkbox, conferido) — estados em
+      `core/src/selection.ts`; acentos em `interface.primary*`, não
+      `visual.*`.
+    - `Selector`: linha controle+texto em 5 tamanhos (controle 20/20/24/24/
+      32; texto 12/20, 14/20, 16/24, 18/24, 18/32, cor `onSurface`).
+    - `StepHelper`: checklist idle/checking/alert/unchecked/checked — ícones
+      12px nas cores caution/critical/success; texto 12/16 `onBackground`.
+    - No RN os glifos sem SVG são desenhados com Views/Text (check ✓,
+      −/+, ponto do radio, anel do step helper) e aceitam ícone via prop.
 - **`radiusScale`** (`base` | `producao`) é escolhido no `MdsProvider`
   (default `base`) porque os tokens de raio de botão/input apontam para
   `{medium}`/`{small}`/... sem fixar a escala de `01-radii`. O default veio

@@ -79,6 +79,12 @@ export function FieldFrame(props: {
   fullWidth?: boolean;
   fieldHeight?: number | null;
   fieldAlignItems?: ViewStyle['alignItems'];
+  /** Borda tracejada (Dropzone). */
+  fieldDashed?: boolean;
+  /** Conteúdo do campo em coluna centrada (Dropzone). */
+  fieldColumn?: boolean;
+  /** Campo sem chrome próprio (Input/code, Input/stepper). */
+  fieldBare?: boolean;
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
 }) {
@@ -120,15 +126,21 @@ export function FieldFrame(props: {
       )}
       <View
         style={{
-          flexDirection: 'row',
+          flexDirection: props.fieldColumn ? 'column' : 'row',
           alignItems: props.fieldAlignItems ?? 'center',
-          gap: toNumber(metrics.fieldGap),
+          justifyContent: props.fieldColumn ? 'center' : undefined,
           height: props.fieldHeight === null ? undefined : (props.fieldHeight ?? metrics.fieldHeight),
-          padding: toNumber(metrics.fieldPadding),
-          borderRadius: chrome.radiusValue,
-          backgroundColor: styles.bgColor,
-          borderWidth: styles.strokeWidth,
-          borderColor: styles.strokeColor,
+          ...(props.fieldBare
+            ? { gap: toNumber(metrics.columnGap) }
+            : {
+                gap: toNumber(metrics.fieldGap),
+                padding: toNumber(metrics.fieldPadding),
+                borderRadius: chrome.radiusValue,
+                backgroundColor: styles.bgColor,
+                borderWidth: styles.strokeWidth,
+                borderColor: styles.strokeColor,
+                borderStyle: props.fieldDashed ? 'dashed' : 'solid',
+              }),
         }}
       >
         {props.children}

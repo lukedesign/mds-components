@@ -1,5 +1,20 @@
 import { useMemo, useState } from 'react';
-import { Button, Input, InputAction, InputPassword, MdsProvider, Textarea } from '@mds/components-web';
+import {
+  Button,
+  Checkbox,
+  Dropzone,
+  Input,
+  InputAction,
+  InputCode,
+  InputDropdown,
+  InputPassword,
+  InputStepper,
+  MdsProvider,
+  Radio,
+  Selector,
+  StepHelper,
+  Textarea,
+} from '@mds/components-web';
 import type {
   ButtonFamily,
   ButtonRole,
@@ -149,9 +164,114 @@ export function App() {
           <InputPassword label="Senha" placeholder="••••••••" helperText="Mínimo de 8 caracteres" fullWidth />
           <InputAction label="Data" placeholder="00/00/0000" helperText="Abra o calendário" actionIcon={<IconDot />} actionLabel="Abrir calendário" onAction={() => console.log('action!')} fullWidth />
           <Textarea label="Mensagem" placeholder="Input Text" helperText="Input Helper" maxLength={140} icon={<IconDot />} fullWidth />
+          <DropdownDemo />
+          <InputCode label="Código de 6 dígitos" helperText="Enviado por SMS" fullWidth />
+          <InputCode label="Código de 4 dígitos" length={4} feedback="critical" helperText="Código inválido" fullWidth />
+          <InputStepper helperText="Quantidade" max={10} fullWidth />
+          <DropzoneDemo />
+        </section>
+
+        <section style={{ marginTop: 24, maxWidth: 420, display: 'grid', gap: 12 }}>
+          <h2 style={{ fontSize: 16, margin: 0 }}>Seleção</h2>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Checkbox aria-label="Normal" />
+            <Checkbox defaultChecked aria-label="Selecionado" />
+            <Checkbox indeterminate aria-label="Indeterminado" />
+            <Checkbox feedback="critical" aria-label="Feedback" />
+            <Checkbox disabled aria-label="Desabilitado" />
+            <Checkbox disabled defaultChecked aria-label="Desabilitado selecionado" />
+            <RadioDemo />
+            <Radio disabled aria-label="Radio desabilitado" />
+            <Radio disabled selected aria-label="Radio desabilitado selecionado" />
+          </div>
+          <SelectorDemo />
+          <div>
+            <StepHelper state="idle">Ao menos 8 caracteres</StepHelper>
+            <StepHelper state="checking">Verificando disponibilidade</StepHelper>
+            <StepHelper state="alert">Evite sequências óbvias</StepHelper>
+            <StepHelper state="unchecked">Precisa de um número</StepHelper>
+            <StepHelper state="checked" counter="3/4">Tem letra maiúscula</StepHelper>
+          </div>
         </section>
       </div>
     </MdsProvider>
+  );
+}
+
+function DropdownDemo() {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState('');
+  return (
+    <div style={{ display: 'grid', gap: 4 }}>
+      <InputDropdown
+        label="Estado"
+        placeholder="Selecione..."
+        helperText="Campo-gatilho (lista fora do escopo do Figma)"
+        value={value}
+        open={open}
+        onToggle={setOpen}
+        fullWidth
+      />
+      {open && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          {['Minas Gerais', 'São Paulo'].map((option) => (
+            <Button key={option} variant="ghost" size="small" onClick={() => { setValue(option); setOpen(false); }}>
+              {option}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DropzoneDemo() {
+  const [files, setFiles] = useState<File[]>([]);
+  return (
+    <Dropzone
+      label="Documentos"
+      helperText="PDF ou imagem"
+      files={files}
+      maxFiles={3}
+      onFiles={setFiles}
+      fullWidth
+    />
+  );
+}
+
+function RadioDemo() {
+  const [selected, setSelected] = useState('a');
+  return (
+    <span role="radiogroup" style={{ display: 'inline-flex', gap: 12 }}>
+      <Radio selected={selected === 'a'} onSelect={() => setSelected('a')} aria-label="Opção A" />
+      <Radio selected={selected === 'b'} onSelect={() => setSelected('b')} aria-label="Opção B" />
+      <Radio selected={selected === 'b'} feedback="info" onSelect={() => setSelected('b')} aria-label="Opção C" />
+    </span>
+  );
+}
+
+function SelectorDemo() {
+  const [checked, setChecked] = useState(false);
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      {(['xSmall', 'small', 'medium', 'large', 'xLarge'] as const).map((size) => (
+        <Selector
+          key={size}
+          size={size}
+          control={
+            <Checkbox
+              size={{ xSmall: 20, small: 20, medium: 24, large: 24, xLarge: 32 }[size]}
+              checked={checked}
+              onChange={setChecked}
+              aria-label={`Selector ${size}`}
+            />
+          }
+          onPress={() => setChecked(!checked)}
+        >
+          Selector {size}
+        </Selector>
+      ))}
+    </div>
   );
 }
 
