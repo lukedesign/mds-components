@@ -7,33 +7,30 @@ import {
   type ReactNode,
 } from 'react';
 import type { InputFeedbackRole, InputRadius } from '@mds/components-core';
-import { FieldFrame, FieldIcon, FieldLoader, useFieldChrome, useFieldInteraction } from './field';
+import { FieldFrame, FieldIcon, useFieldChrome, useFieldInteraction } from './field';
 import { IconFeedbackAlert } from './icons';
 
-export interface InputProps extends Omit<ComponentPropsWithoutRef<'input'>, 'size'> {
-  /** Rótulo acima do campo (Input Title). */
+export interface TextareaProps extends ComponentPropsWithoutRef<'textarea'> {
   label?: ReactNode;
-  /** Ícone de 12px à direita do rótulo; null oculta, undefined usa o info. */
   titleIcon?: ReactNode | null;
-  /** Texto de apoio abaixo do campo (Input Helper). */
   helperText?: ReactNode;
-  /** Ícone de 12px do helper; null oculta, undefined usa o info. */
   helperIcon?: ReactNode | null;
-  /** Papel de feedback (estado Feedback do Figma): info/success/caution/critical. */
   feedback?: InputFeedbackRole;
-  /** Ícone de 20px exibido no campo em estado de feedback; null oculta. */
   feedbackIcon?: ReactNode | null;
-  /** Ícone de 20px no início do campo. */
+  /** Ícone de 20px no início do campo (alinhado ao topo, como no Figma). */
   icon?: ReactNode;
-  /** Exibe o Loader no campo (estado com showLoader do Figma). */
-  loading?: boolean;
   radius?: InputRadius;
   fullWidth?: boolean;
-  /** Conteúdo extra no fim do campo (usado por InputPassword/InputAction). */
-  trailing?: ReactNode;
+  /** Altura do campo multilinha (o componente do Figma usa 148 no total;
+   * o campo em si fica com o restante após title/helper). */
+  fieldHeight?: number;
+  /** Exibe o contador "n/máx" no helper quando maxLength está definido. */
+  showCounter?: boolean;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+/** Input/text do Figma: campo multilinha com ícone ao topo e contador
+ * opcional (ExtraInfo "x/#") no helper. */
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   {
     label,
     titleIcon,
@@ -42,10 +39,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     feedback,
     feedbackIcon,
     icon,
-    loading = false,
     radius = 'default',
     fullWidth = false,
-    trailing,
+    fieldHeight = 100,
+    showCounter = true,
     disabled,
     id,
     className,
@@ -55,19 +52,23 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   ref,
 ) {
   const autoId = useId();
-  const inputId = id ?? `mds-input-${autoId}`;
+  const inputId = id ?? `mds-textarea-${autoId}`;
 
   const [innerValue, setInnerValue] = useState(String(rest.defaultValue ?? ''));
   const isControlled = rest.value !== undefined;
-  const hasValue = String(isControlled ? rest.value : innerValue).length > 0;
+  const currentValue = String(isControlled ? rest.value : innerValue);
+  const hasValue = currentValue.length > 0;
 
   const interaction = useFieldInteraction({ disabled, feedback: feedback != null, hasValue });
   const chrome = useFieldChrome({ state: interaction.state, feedbackRole: feedback, radius });
 
-  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     if (!isControlled) setInnerValue(event.target.value);
     rest.onChange?.(event);
   };
+
+  const counter =
+    showCounter && rest.maxLength != null ? `${currentValue.length}/${rest.maxLength}` : undefined;
 
   return (
     <FieldFrame
@@ -76,20 +77,24 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       titleIcon={titleIcon}
       helperText={helperText}
       helperIcon={helperIcon}
+      helperExtra={counter}
       fullWidth={fullWidth}
       htmlFor={inputId}
       containerHandlers={interaction.containerHandlers}
+      fieldHeight={fieldHeight}
+      fieldAlignItems="flex-start"
       className={className}
       style={style}
     >
       {icon != null && <FieldIcon>{icon}</FieldIcon>}
-      <input
+      <textarea
         {...rest}
         ref={ref}
         id={inputId}
         className="mds-field__input"
         disabled={disabled}
         aria-invalid={feedback === 'critical' || undefined}
+        style={{ height: '100%' }}
         onChange={onChange}
         onFocus={(event) => {
           interaction.inputHandlers.onFocus(event);
@@ -100,13 +105,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           rest.onBlur?.(event);
         }}
       />
-      {loading && <FieldLoader color={chrome.tokens.visual.primary.visual} />}
       {feedback != null && feedbackIcon !== null && (
         <FieldIcon color={chrome.tokens.feedback[feedback].onFeedbackContainer}>
           {feedbackIcon ?? <IconFeedbackAlert />}
         </FieldIcon>
       )}
-      {trailing}
     </FieldFrame>
   );
 });

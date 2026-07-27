@@ -94,12 +94,31 @@ Os componentes **nunca importam uma marca**: o objeto de tokens entra via
     `{inset-deprecated.null}`, divergindo de `00-button.size.*.tokens.json`
     (`{inset-deprecated.xxxSmall}` = 8px). Seguimos o Figma (override em
     `core/src/button.ts`); **divergência a reportar ao design**.
-- **Cores do Input são PROVISÓRIAS**: a Fase 2 só define RAIO para inputs
-  (`input.radius.*`). O mapa de cores por estado
-  (`INPUT_COLOR_REFS` em `core/src/input.ts`) foi definido aqui sobre
-  `interface.*` + `feedback.critical` seguindo o vocabulário de estados dos
-  botões. Quando o design publicar tokens de cor de input, substituir esse
-  mapa (idealmente gerando via sync, como no botão).
+- **Inputs conferidos contra o Figma** (página "Entrada & Seleção <global>",
+  2026-07-27) — substituíram o mapa provisório da primeira versão:
+  - Componentes desta rodada: `Input` (Input/simples), `InputPassword`
+    (+ Password Visibility Action embutido), `InputAction` (ação embutida) e
+    `Textarea` (Input/text, com contador "n/máx" no helper via `maxLength`).
+    Web + RN; no RN os ícones do olho são props obrigatórias
+    (`visibilityIcon`/`visibilityOffIcon`) porque não embutimos SVG lá.
+  - Estados do inputfield (ver tabela em `core/src/input.ts`):
+    normal 1px `outlineMuted` / sobre 2px `visualMuted` / emFoco 2px
+    `inversePrimary` / ativo 1px `visual` / preenchido 2px
+    `mutedOnBackground` / feedback 2px `feedback.<papel>` (texto/helper
+    `onFeedbackContainer`) / desabilitado bg `backgroundMuted` + 2px
+    `outlineMuted`. `deriveInputState` mapeia interação → estado:
+    foco por teclado (focus-visible) = emFoco/preenchidoEmFoco; foco de
+    ponteiro/digitação = ativo; RN passa focusVisible=false.
+  - **`feedback` é um papel** (info/success/caution/critical), não booleano
+    de erro — o Figma vincula `{feedback}` genérico.
+  - Métricas: campo 44px, padding 12, gap 8, ícone 20, ação interna 32px com
+    raio `radii.<escala>.small`; title 14/20, texto 16/20
+    (`paragraph.medium`), helper 12/16; coluna com gap 4 e px 8.
+  - Ícones funcionais (olho, info, alerta) embutidos em
+    `web/src/icons.tsx` com os paths exatos exportados do Figma.
+  - Fora desta rodada (páginas já inventariadas no Figma): Input/dropdown
+    (só o campo-gatilho; lista não desenhada), code, stepper, dropzone,
+    Checkbox, Radio, Selector, Step Helper.
 - **`radiusScale`** (`base` | `producao`) é escolhido no `MdsProvider`
   (default `base`) porque os tokens de raio de botão/input apontam para
   `{medium}`/`{small}`/... sem fixar a escala de `01-radii`. O default veio

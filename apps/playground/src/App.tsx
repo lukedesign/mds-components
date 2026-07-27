@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button, Input, MdsProvider } from '@mds/components-web';
+import { Button, Input, InputAction, InputPassword, MdsProvider, Textarea } from '@mds/components-web';
 import type {
   ButtonFamily,
   ButtonRole,
@@ -137,11 +137,18 @@ export function App() {
         </section>
 
         <section style={{ marginTop: 24, maxWidth: 420, display: 'grid', gap: 16 }}>
-          <h2 style={{ fontSize: 16, margin: 0 }}>Input</h2>
-          <Input label="Nome" placeholder="Digite seu nome" helperText="Como aparece no documento" fullWidth />
-          <Input label="E-mail" placeholder="voce@exemplo.com" error helperText="E-mail inválido" fullWidth />
-          <Input label="CPF" placeholder="000.000.000-00" disabled helperText="Campo bloqueado" fullWidth />
-          <Input label="Busca" placeholder="Buscar..." radius="full" prefix={<IconDot size={20} />} fullWidth />
+          <h2 style={{ fontSize: 16, margin: 0 }}>Inputs</h2>
+          <Input label="Nome" placeholder="Input Text" helperText="Input Helper" fullWidth />
+          <Input label="Com ícone" placeholder="Input Text" helperText="Input Helper" icon={<IconDot />} fullWidth />
+          <Input label="Carregando" placeholder="Input Text" helperText="Consultando..." loading fullWidth />
+          <Input label="Feedback caution" defaultValue="Valor suspeito" feedback="caution" helperText="Confira este campo" fullWidth />
+          <Input label="Feedback critical" defaultValue="Valor inválido" feedback="critical" helperText="Corrija este campo" fullWidth />
+          <Input label="Feedback success" defaultValue="Tudo certo" feedback="success" helperText="Validado" fullWidth />
+          <Input label="Desabilitado" placeholder="Input Text" helperText="Campo bloqueado" disabled fullWidth />
+          <Input label="Desabilitado preenchido" defaultValue="Valor fixo" helperText="Campo bloqueado" disabled fullWidth />
+          <InputPassword label="Senha" placeholder="••••••••" helperText="Mínimo de 8 caracteres" fullWidth />
+          <InputAction label="Data" placeholder="00/00/0000" helperText="Abra o calendário" actionIcon={<IconDot />} actionLabel="Abrir calendário" onAction={() => console.log('action!')} fullWidth />
+          <Textarea label="Mensagem" placeholder="Input Text" helperText="Input Helper" maxLength={140} icon={<IconDot />} fullWidth />
         </section>
       </div>
     </MdsProvider>

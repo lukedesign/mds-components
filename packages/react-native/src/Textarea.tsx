@@ -1,38 +1,19 @@
 import { forwardRef, useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  TextInput,
-  View,
-  type StyleProp,
-  type TextInputProps,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native';
-import type { InputFeedbackRole, InputRadius } from '@mds/components-core';
+import { TextInput, View, type TextStyle } from 'react-native';
+import type { InputFeedbackRole } from '@mds/components-core';
 import { FieldFrame, useFieldChrome, useFieldInteraction } from './field';
 import { toNumber } from './provider';
+import type { InputProps } from './Input';
 
-export interface InputProps extends TextInputProps {
-  label?: ReactNode;
-  titleIcon?: ReactNode | null;
-  helperText?: ReactNode;
-  helperIcon?: ReactNode | null;
-  /** Papel de feedback (estado Feedback do Figma): info/success/caution/critical. */
-  feedback?: InputFeedbackRole;
-  /** Ícone de 20px exibido no campo em estado de feedback. */
-  feedbackIcon?: ReactNode;
-  /** Ícone de 20px no início do campo. */
-  icon?: ReactNode;
-  loading?: boolean;
-  disabled?: boolean;
-  radius?: InputRadius;
-  fullWidth?: boolean;
-  /** Conteúdo extra no fim do campo (usado por InputPassword/InputAction). */
-  trailing?: ReactNode;
-  containerStyle?: StyleProp<ViewStyle>;
+export interface TextareaProps extends Omit<InputProps, 'trailing' | 'loading' | 'multiline'> {
+  fieldHeight?: number;
+  /** Exibe o contador "n/máx" no helper quando maxLength está definido. */
+  showCounter?: boolean;
 }
 
-export const Input = forwardRef<TextInput, InputProps>(function Input(
+/** Input/text do Figma: campo multilinha com ícone ao topo e contador
+ * opcional (ExtraInfo "x/#") no helper. */
+export const Textarea = forwardRef<TextInput, TextareaProps>(function Textarea(
   {
     label,
     titleIcon,
@@ -41,11 +22,11 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     feedback,
     feedbackIcon,
     icon,
-    loading = false,
     disabled = false,
     radius = 'default',
     fullWidth = false,
-    trailing,
+    fieldHeight = 100,
+    showCounter = true,
     containerStyle,
     style,
     ...rest
@@ -54,11 +35,15 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 ) {
   const [innerValue, setInnerValue] = useState(String(rest.defaultValue ?? ''));
   const isControlled = rest.value !== undefined;
-  const hasValue = String(isControlled ? rest.value : innerValue).length > 0;
+  const currentValue = String(isControlled ? rest.value : innerValue);
+  const hasValue = currentValue.length > 0;
 
   const interaction = useFieldInteraction({ disabled, feedback: feedback != null, hasValue });
   const chrome = useFieldChrome({ state: interaction.state, feedbackRole: feedback, radius });
   const { metrics, styles } = chrome;
+
+  const counter =
+    showCounter && rest.maxLength != null ? `${currentValue.length}/${rest.maxLength}` : undefined;
 
   return (
     <FieldFrame
@@ -67,7 +52,10 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       titleIcon={titleIcon}
       helperText={helperText}
       helperIcon={helperIcon}
+      helperExtra={counter}
       fullWidth={fullWidth}
+      fieldHeight={fieldHeight}
+      fieldAlignItems="flex-start"
       style={containerStyle}
     >
       {icon != null && (
@@ -76,6 +64,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       <TextInput
         {...rest}
         ref={ref}
+        multiline
         editable={!disabled && rest.editable !== false}
         placeholderTextColor={styles.placeholderColor}
         onChangeText={(text) => {
@@ -94,6 +83,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           {
             flex: 1,
             padding: 0,
+            textAlignVertical: 'top',
             color: styles.textColor,
             fontFamily: metrics.textTypography.fontFamily,
             fontSize: toNumber(metrics.textTypography.fontSize),
@@ -103,11 +93,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           style,
         ]}
       />
-      {loading && <ActivityIndicator size="small" color={chrome.tokens.visual.primary.visual} />}
       {feedback != null && feedbackIcon != null && (
         <View style={{ width: metrics.iconSize, height: metrics.iconSize }}>{feedbackIcon}</View>
       )}
-      {trailing}
     </FieldFrame>
   );
 });
