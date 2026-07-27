@@ -128,7 +128,11 @@ export function resolveButtonMetrics(tokens: MdsTokens, size: ButtonSize = 'larg
     minHeight: spec.minH,
     minWidth: spec.minW,
     gap: resolveDimRef(tokens, spec.gap),
-    paddingVertical: resolveDimRef(tokens, spec.vPadding),
+    // O componente publicado no Figma (Button/Global/Filled) vincula o padding
+    // vertical a {inset-deprecated.null} (0) — a altura vem só de minH — ainda
+    // que 00-button.size.*.tokens.json diga {inset-deprecated.xxxSmall}.
+    // Seguimos o componente publicado; divergência reportada ao design.
+    paddingVertical: 0,
     paddingHorizontal: resolveDimRef(tokens, spec.hPadding),
     // iconSize referencia {lineHeight.*} do mesmo slot do label — usar o
     // lineHeight do composite mantém o valor correto por marca.

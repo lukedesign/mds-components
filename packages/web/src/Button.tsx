@@ -14,7 +14,8 @@ import { useMdsTheme } from './provider';
 import { injectOnce } from './inject';
 
 // Larguras de traço da escala global de borderWidth do repo de tokens
-// (small = 1.5px para o contorno; medium = 2px para o anel de foco).
+// (small = 1.5px para o contorno; medium = 2px para o anel de foco —
+// no Figma o foco é uma borda de 2px DENTRO do botão, cor emFoco.strokeColor).
 const STROKE_WIDTH = '1.5px';
 const FOCUS_RING_WIDTH = '2px';
 
@@ -31,11 +32,23 @@ const BUTTON_CSS = `
   user-select: none;
   white-space: nowrap;
   cursor: pointer;
+  overflow: hidden;
   -webkit-tap-highlight-color: transparent;
   background: var(--mds-button-bg, transparent);
   color: var(--mds-button-fg);
   box-shadow: inset 0 0 0 var(--mds-button-stroke-w, 0px) var(--mds-button-stroke, transparent);
   transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.mds-button::after {
+  /* Overlay do estado pressionado (sdPress no Figma): sdColor a 25% por cima. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--mds-button-sd, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
 }
 .mds-button:hover:not(:disabled):not([data-loading='true']) {
   background: var(--mds-button-bg-hover, var(--mds-button-bg, transparent));
@@ -47,12 +60,14 @@ const BUTTON_CSS = `
   background: var(--mds-button-bg-active, var(--mds-button-bg, transparent));
   color: var(--mds-button-fg-active, var(--mds-button-fg));
   box-shadow: inset 0 0 0 var(--mds-button-stroke-w-active, var(--mds-button-stroke-w, 0px))
-      var(--mds-button-stroke-active, var(--mds-button-stroke, transparent)),
-    0 2px 8px 0 color-mix(in srgb, var(--mds-button-sd, transparent) 25%, transparent);
+    var(--mds-button-stroke-active, var(--mds-button-stroke, transparent));
+}
+.mds-button:active:not(:disabled):not([data-loading='true'])::after {
+  opacity: 0.25;
 }
 .mds-button:focus-visible {
-  outline: ${FOCUS_RING_WIDTH} solid var(--mds-button-focus-ring, currentColor);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: inset 0 0 0 ${FOCUS_RING_WIDTH} var(--mds-button-focus-ring, currentColor);
 }
 .mds-button:disabled {
   cursor: not-allowed;
@@ -66,6 +81,11 @@ const BUTTON_CSS = `
   background: var(--mds-button-bg-loading, var(--mds-button-bg, transparent));
   box-shadow: inset 0 0 0 var(--mds-button-stroke-w-loading, var(--mds-button-stroke-w, 0px))
     var(--mds-button-stroke-loading, var(--mds-button-stroke, transparent));
+}
+.mds-button__label {
+  /* labelArea do Figma: o respiro lateral do texto vem daqui (padding = gap),
+     não de gap no container (que é inline/null = 0). */
+  padding-inline: var(--mds-button-gap, 0px);
 }
 .mds-button__icon {
   display: inline-flex;
@@ -105,6 +125,9 @@ export interface ButtonProps extends ComponentPropsWithoutRef<'button'> {
   radius?: ButtonRadius;
   loading?: boolean;
   fullWidth?: boolean;
+  /** Botão quadrado (minH × minH) só com ícone, sem label — variante iconOnly
+   * do Figma. Passe o ícone em iconStart (ou iconEnd) e um aria-label. */
+  iconOnly?: boolean;
   iconStart?: ReactNode;
   iconEnd?: ReactNode;
 }
@@ -119,6 +142,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     radius = 'default',
     loading = false,
     fullWidth = false,
+    iconOnly = false,
     iconStart,
     iconEnd,
     disabled,
@@ -160,6 +184,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     '--mds-button-stroke-w-loading': colors.carregando.strokeColor ? STROKE_WIDTH : undefined,
     '--mds-button-focus-ring': colors.emFoco.strokeColor,
     '--mds-button-icon-size': String(metrics.iconSize),
+    '--mds-button-gap': String(metrics.gap),
   };
   for (const key of Object.keys(vars)) {
     if (vars[key] === undefined) delete vars[key];
@@ -167,19 +192,28 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 
   const inline: CSSProperties = {
     minHeight: metrics.minHeight,
-    minWidth: metrics.minWidth,
-    gap: metrics.gap,
-    padding: `${metrics.paddingVertical} ${metrics.paddingHorizontal}`,
     borderRadius,
     fontFamily: metrics.typography.fontFamily,
     fontSize: metrics.typography.fontSize,
     fontWeight: metrics.typography.fontWeight as CSSProperties['fontWeight'],
     lineHeight: String(metrics.typography.lineHeight),
     letterSpacing: metrics.typography.kerning,
-    width: fullWidth ? '100%' : undefined,
+    ...(iconOnly
+      ? // iconOnly no Figma: quadrado minH × minH, padding zero.
+        { width: metrics.minHeight, minWidth: 0, padding: 0 }
+      : {
+          minWidth: metrics.minWidth,
+          padding: `${metrics.paddingVertical}px ${metrics.paddingHorizontal}`,
+          // No loading o Figma colapsa o botão para a largura mínima.
+          width: fullWidth ? '100%' : loading ? metrics.minWidth : undefined,
+        }),
     ...(vars as CSSProperties),
     ...style,
   };
+
+  const icon = iconStart ?? iconEnd;
+  const ariaLabel =
+    rest['aria-label'] ?? (iconOnly || loading ? (typeof children === 'string' ? children : undefined) : undefined);
 
   return (
     <button
@@ -191,21 +225,29 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled || loading}
       data-loading={loading || undefined}
       aria-busy={loading || undefined}
+      aria-label={ariaLabel}
     >
       {loading ? (
+        // Loading no Figma: só o spinner, sem label nem ícones.
         <span className="mds-button__spinner" aria-hidden="true" />
-      ) : (
-        iconStart && (
-          <span className="mds-button__icon" aria-hidden="true">
-            {iconStart}
-          </span>
-        )
-      )}
-      {children}
-      {iconEnd && !loading && (
+      ) : iconOnly ? (
         <span className="mds-button__icon" aria-hidden="true">
-          {iconEnd}
+          {icon}
         </span>
+      ) : (
+        <>
+          {iconStart != null && (
+            <span className="mds-button__icon" aria-hidden="true">
+              {iconStart}
+            </span>
+          )}
+          <span className="mds-button__label">{children}</span>
+          {iconEnd != null && (
+            <span className="mds-button__icon" aria-hidden="true">
+              {iconEnd}
+            </span>
+          )}
+        </>
       )}
     </button>
   );

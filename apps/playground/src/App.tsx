@@ -50,7 +50,7 @@ const FAMILY_ROWS: Array<{ family: ButtonFamily; role?: ButtonRole; title: strin
 export function App() {
   const [brand, setBrand] = useState<BrandKey>('mrv');
   const [mode, setMode] = useState<Mode>('light');
-  const [radiusScale, setRadiusScale] = useState<RadiusScale>('producao');
+  const [radiusScale, setRadiusScale] = useState<RadiusScale>('base');
   const [styleMode, setStyleMode] = useState<ButtonStyleMode>('default');
 
   const tokens = useMemo(
@@ -84,8 +84,8 @@ export function App() {
           <label>
             Radii{' '}
             <select value={radiusScale} onChange={(e) => setRadiusScale(e.target.value as RadiusScale)}>
-              <option value="producao">producao</option>
               <option value="base">base</option>
+              <option value="producao">producao</option>
             </select>
           </label>
           <label>
@@ -131,6 +131,8 @@ export function App() {
             <Button size="mediumL" radius="large">radius large</Button>
             <Button size="mediumL" radius="full">radius full</Button>
             <Button size="mediumL" iconStart={<IconDot />}>com ícone</Button>
+            <Button size="mediumL" iconOnly iconStart={<IconDot />} aria-label="Ação" />
+            <Button size="mediumL" iconOnly loading iconStart={<IconDot />} aria-label="Carregando" />
           </div>
         </section>
 

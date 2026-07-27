@@ -15,7 +15,9 @@ export interface MdsProviderProps {
   children: ReactNode;
 }
 
-export function MdsProvider({ tokens, radiusScale = 'producao', children }: MdsProviderProps) {
+// Default "base": o componente publicado no Figma resolve {medium} = 8px,
+// que é a escala radii.base (producao teria medium = 16px).
+export function MdsProvider({ tokens, radiusScale = 'base', children }: MdsProviderProps) {
   const value = useMemo(() => ({ tokens, radiusScale }), [tokens, radiusScale]);
   return <MdsContext.Provider value={value}>{children}</MdsContext.Provider>;
 }

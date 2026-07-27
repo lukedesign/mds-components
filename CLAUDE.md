@@ -58,11 +58,23 @@ Os componentes **nunca importam uma marca**: o objeto de tokens entra via
   `FONT_SIZE_TO_LABEL` em `core/src/button.ts`. `iconSize` usa o
   `lineHeight` do mesmo composite.
 - **Larguras de traço**: contorno 1.5px (escala global `small` do repo de
-  tokens), anel de foco 2px (`medium`) — constantes nos pacotes de
+  tokens), borda de foco 2px (`medium`) — constantes nos pacotes de
   plataforma, já que a escala de borderWidth não está no shape.
-- **`sdColor`** (sombra no estado pressionado) vira
-  `0 2px 8px color-mix(... 25%)` no web; não aplicado no RN (sombras RN são
-  outra API — pendente).
+- **Fidelidade ao componente publicado no Figma** (Button/Global/Filled,
+  node 1534:14876 de "Prebuild Components", conferido em 2026-07-27):
+  - `sdColor` (pressionado) é um **overlay interno a 25% de opacidade**
+    (camada "sdPress" do Figma) — web via `::after`, RN via View absoluta.
+  - Foco = **borda de 2px dentro do botão** (`emFoco.strokeColor`), não anel
+    externo com offset.
+  - **Loading esconde label e ícones** (só spinner) e fixa a largura em
+    `minW` (iconOnly: quadrado `minH`).
+  - **`iconOnly`**: prop booleana, botão quadrado `minH × minH`, padding 0.
+  - **labelArea**: o respiro lateral do texto vem de padding no label
+    (= `gap`), com gap 0 no container (`inline/null`), como no Figma.
+  - **Padding vertical = 0**: o componente publicado vincula
+    `{inset-deprecated.null}`, divergindo de `00-button.size.*.tokens.json`
+    (`{inset-deprecated.xxxSmall}` = 8px). Seguimos o Figma (override em
+    `core/src/button.ts`); **divergência a reportar ao design**.
 - **Cores do Input são PROVISÓRIAS**: a Fase 2 só define RAIO para inputs
   (`input.radius.*`). O mapa de cores por estado
   (`INPUT_COLOR_REFS` em `core/src/input.ts`) foi definido aqui sobre
@@ -70,8 +82,10 @@ Os componentes **nunca importam uma marca**: o objeto de tokens entra via
   botões. Quando o design publicar tokens de cor de input, substituir esse
   mapa (idealmente gerando via sync, como no botão).
 - **`radiusScale`** (`base` | `producao`) é escolhido no `MdsProvider`
-  (default `producao`) porque os tokens de raio de botão/input apontam para
-  `{medium}`/`{small}`/... sem fixar a escala de `01-radii`.
+  (default `base`) porque os tokens de raio de botão/input apontam para
+  `{medium}`/`{small}`/... sem fixar a escala de `01-radii`. O default veio
+  do componente publicado no Figma, que resolve `{medium}` = 8px (escala
+  base; producao teria 16px).
 - **Loading desabilita o botão** (`disabled={disabled || loading}`) e troca o
   ícone por spinner; cores do estado `carregando` com fallback para `normal`.
 
