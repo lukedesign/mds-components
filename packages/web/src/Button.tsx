@@ -1,23 +1,19 @@
 import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
 import {
-  resolveButtonColors,
   resolveButtonMetrics,
   resolveButtonRadius,
+  resolveButtonStyles,
   type ButtonFamily,
   type ButtonRadius,
   type ButtonRole,
   type ButtonSize,
+  type ButtonStateStyle,
   type ButtonStyleMode,
+  type ButtonUnderline,
   type ButtonVariant,
 } from '@mds/components-core';
 import { useMdsTheme } from './provider';
 import { injectOnce } from './inject';
-
-// Larguras de traço da escala global de borderWidth do repo de tokens
-// (small = 1.5px para o contorno; medium = 2px para o anel de foco —
-// no Figma o foco é uma borda de 2px DENTRO do botão, cor emFoco.strokeColor).
-const STROKE_WIDTH = '1.5px';
-const FOCUS_RING_WIDTH = '2px';
 
 const BUTTON_CSS = `
 .mds-button {
@@ -28,19 +24,21 @@ const BUTTON_CSS = `
   box-sizing: border-box;
   border: none;
   margin: 0;
+  padding: 0;
   text-decoration: none;
   user-select: none;
   white-space: nowrap;
   cursor: pointer;
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
   background: var(--mds-button-bg, transparent);
   color: var(--mds-button-fg);
   box-shadow: inset 0 0 0 var(--mds-button-stroke-w, 0px) var(--mds-button-stroke, transparent);
   transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
 }
+.mds-button[data-anatomy='box'] {
+  overflow: hidden;
+}
 .mds-button::after {
-  /* Overlay do estado pressionado (sdPress no Figma): sdColor a 25% por cima. */
+  /* Overlay do estado pressionado (sdPress no Figma). */
   content: '';
   position: absolute;
   inset: 0;
@@ -63,11 +61,13 @@ const BUTTON_CSS = `
     var(--mds-button-stroke-active, var(--mds-button-stroke, transparent));
 }
 .mds-button:active:not(:disabled):not([data-loading='true'])::after {
-  opacity: 0.25;
+  opacity: var(--mds-button-sd-opacity, 0);
 }
 .mds-button:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 ${FOCUS_RING_WIDTH} var(--mds-button-focus-ring, currentColor);
+  background: var(--mds-button-bg-focus, var(--mds-button-bg, transparent));
+  box-shadow: inset 0 0 0 var(--mds-button-stroke-w-focus, 0px)
+    var(--mds-button-stroke-focus, transparent);
 }
 .mds-button:disabled {
   cursor: not-allowed;
@@ -76,16 +76,41 @@ const BUTTON_CSS = `
   box-shadow: inset 0 0 0 var(--mds-button-stroke-w-disabled, 0px)
     var(--mds-button-stroke-disabled, transparent);
 }
+.mds-button:disabled .mds-button__content {
+  opacity: var(--mds-button-content-opacity-disabled, 1);
+}
 .mds-button[data-loading='true'] {
   cursor: progress;
   background: var(--mds-button-bg-loading, var(--mds-button-bg, transparent));
   box-shadow: inset 0 0 0 var(--mds-button-stroke-w-loading, var(--mds-button-stroke-w, 0px))
     var(--mds-button-stroke-loading, var(--mds-button-stroke, transparent));
 }
+.mds-button__content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mds-button-root-gap, 0px);
+}
 .mds-button__label {
-  /* labelArea do Figma: o respiro lateral do texto vem daqui (padding = gap),
-     não de gap no container (que é inline/null = 0). */
-  padding-inline: var(--mds-button-gap, 0px);
+  /* labelArea do Figma: nas variantes de caixa o respiro lateral do texto vem
+     daqui (padding = gap); nas inline (underline/text) é aqui que mora o
+     sublinhado por estado. */
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--mds-button-label-pad, 0px);
+  border-bottom: var(--mds-button-ul, 0 solid transparent);
+}
+.mds-button:hover:not(:disabled):not([data-loading='true']) .mds-button__label {
+  border-bottom: var(--mds-button-ul-hover, var(--mds-button-ul, 0 solid transparent));
+}
+.mds-button:active:not(:disabled):not([data-loading='true']) .mds-button__label {
+  border-bottom: var(--mds-button-ul-active, var(--mds-button-ul, 0 solid transparent));
+}
+.mds-button:focus-visible .mds-button__label {
+  border-bottom: var(--mds-button-ul-focus, var(--mds-button-ul, 0 solid transparent));
+}
+.mds-button:disabled .mds-button__label {
+  border-bottom: var(--mds-button-ul-disabled, var(--mds-button-ul, 0 solid transparent));
 }
 .mds-button__icon {
   display: inline-flex;
@@ -110,8 +135,11 @@ const BUTTON_CSS = `
 }
 `;
 
+const ulValue = (underline: ButtonUnderline | undefined): string | undefined =>
+  underline ? `${underline.width}px ${underline.style} ${underline.color}` : undefined;
+
 export interface ButtonProps extends ComponentPropsWithoutRef<'button'> {
-  /** Preenchimento: preenchido (fill), contornado (outline), naoPreenchido (texto). */
+  /** Variante do Figma: filled, stroke, ghost, translucent, underline ou text. */
   variant?: ButtonVariant;
   /** Família de cor: brand (papéis visuais), feedback ou neutral. */
   family?: ButtonFamily;
@@ -134,7 +162,7 @@ export interface ButtonProps extends ComponentPropsWithoutRef<'button'> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
-    variant = 'preenchido',
+    variant = 'filled',
     family = 'brand',
     colorRole,
     styleMode = 'default',
@@ -157,63 +185,86 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   injectOnce('mds-button-css', BUTTON_CSS);
 
   const role = colorRole ?? (family === 'feedback' ? 'info' : 'primary');
-  const colors = resolveButtonColors({ tokens, styleMode, family, role, variant });
+  const styles = resolveButtonStyles({ tokens, styleMode, family, role, variant });
   const metrics = resolveButtonMetrics(tokens, size);
-  const borderRadius = resolveButtonRadius(tokens, radius, radiusScale);
+  const isBox = styles.anatomy === 'box';
+  const showSpinner = loading && styles.hasLoading;
+  const s = styles.states;
+
+  const strokeVars = (state: ButtonStateStyle, suffix: string) => ({
+    [`--mds-button-stroke${suffix}`]: state.strokeColor,
+    [`--mds-button-stroke-w${suffix}`]: state.strokeWidth ? `${state.strokeWidth}px` : undefined,
+  });
 
   const vars: Record<string, string | undefined> = {
-    '--mds-button-bg': colors.normal.bgColor,
-    '--mds-button-fg': colors.normal.labelColor,
-    '--mds-button-stroke': colors.normal.strokeColor,
-    '--mds-button-stroke-w': colors.normal.strokeColor ? STROKE_WIDTH : undefined,
-    '--mds-button-bg-hover': colors.sobre.bgColor,
-    '--mds-button-fg-hover': colors.sobre.labelColor,
-    '--mds-button-stroke-hover': colors.sobre.strokeColor,
-    '--mds-button-stroke-w-hover': colors.sobre.strokeColor ? STROKE_WIDTH : undefined,
-    '--mds-button-bg-active': colors.pressionado.bgColor,
-    '--mds-button-fg-active': colors.pressionado.labelColor,
-    '--mds-button-stroke-active': colors.pressionado.strokeColor,
-    '--mds-button-stroke-w-active': colors.pressionado.strokeColor ? STROKE_WIDTH : undefined,
-    '--mds-button-sd': colors.pressionado.sdColor,
-    '--mds-button-bg-disabled': colors.desabilitado.bgColor,
-    '--mds-button-fg-disabled': colors.desabilitado.labelColor,
-    '--mds-button-stroke-disabled': colors.desabilitado.strokeColor,
-    '--mds-button-stroke-w-disabled': colors.desabilitado.strokeColor ? STROKE_WIDTH : undefined,
-    '--mds-button-bg-loading': colors.carregando.bgColor,
-    '--mds-button-stroke-loading': colors.carregando.strokeColor,
-    '--mds-button-stroke-w-loading': colors.carregando.strokeColor ? STROKE_WIDTH : undefined,
-    '--mds-button-focus-ring': colors.emFoco.strokeColor,
+    '--mds-button-bg': s.normal.bgColor,
+    '--mds-button-fg': s.normal.labelColor,
+    ...strokeVars(s.normal, ''),
+    '--mds-button-bg-hover': s.sobre.bgColor,
+    '--mds-button-fg-hover': s.sobre.labelColor,
+    ...strokeVars(s.sobre, '-hover'),
+    '--mds-button-bg-active': s.pressionado.bgColor,
+    '--mds-button-fg-active': s.pressionado.labelColor,
+    ...strokeVars(s.pressionado, '-active'),
+    '--mds-button-sd': s.pressionado.sdColor,
+    '--mds-button-sd-opacity': s.pressionado.sdOpacity != null ? String(s.pressionado.sdOpacity) : undefined,
+    '--mds-button-bg-focus': s.emFoco.bgColor,
+    ...strokeVars(s.emFoco, '-focus'),
+    '--mds-button-bg-disabled': s.desabilitado.bgColor,
+    '--mds-button-fg-disabled': s.desabilitado.labelColor,
+    ...strokeVars(s.desabilitado, '-disabled'),
+    '--mds-button-content-opacity-disabled':
+      s.desabilitado.contentOpacity != null ? String(s.desabilitado.contentOpacity) : undefined,
+    '--mds-button-bg-loading': s.carregando.bgColor,
+    ...strokeVars(s.carregando, '-loading'),
+    '--mds-button-ul': ulValue(s.normal.underline),
+    '--mds-button-ul-hover': ulValue(s.sobre.underline),
+    '--mds-button-ul-active': ulValue(s.pressionado.underline),
+    '--mds-button-ul-focus': ulValue(s.emFoco.underline),
+    '--mds-button-ul-disabled': ulValue(s.desabilitado.underline),
     '--mds-button-icon-size': String(metrics.iconSize),
-    '--mds-button-gap': String(metrics.gap),
+    '--mds-button-label-pad': isBox ? String(metrics.gap) : undefined,
+    // Root gap: variantes de caixa usam 0 (inline/null); underline usa o gap
+    // do tamanho; text usa gap/s-small — como nos componentes do Figma.
+    '--mds-button-root-gap': isBox
+      ? undefined
+      : String(variant === 'text' ? tokens.gap['s-small'] : metrics.gap),
   };
   for (const key of Object.keys(vars)) {
     if (vars[key] === undefined) delete vars[key];
   }
 
+  const boxStyles: CSSProperties = isBox
+    ? {
+        minHeight: metrics.minHeight,
+        borderRadius: resolveButtonRadius(tokens, radius, radiusScale),
+        ...(iconOnly
+          ? // iconOnly no Figma: quadrado minH × minH, padding zero.
+            { width: metrics.minHeight, minWidth: 0 }
+          : {
+              minWidth: metrics.minWidth,
+              padding: `${metrics.paddingVertical}px ${metrics.paddingHorizontal}`,
+              // No loading o Figma colapsa o botão para a largura mínima.
+              width: fullWidth ? '100%' : showSpinner ? metrics.minWidth : undefined,
+            }),
+      }
+    : { width: fullWidth ? '100%' : undefined };
+
   const inline: CSSProperties = {
-    minHeight: metrics.minHeight,
-    borderRadius,
     fontFamily: metrics.typography.fontFamily,
     fontSize: metrics.typography.fontSize,
     fontWeight: metrics.typography.fontWeight as CSSProperties['fontWeight'],
     lineHeight: String(metrics.typography.lineHeight),
     letterSpacing: metrics.typography.kerning,
-    ...(iconOnly
-      ? // iconOnly no Figma: quadrado minH × minH, padding zero.
-        { width: metrics.minHeight, minWidth: 0, padding: 0 }
-      : {
-          minWidth: metrics.minWidth,
-          padding: `${metrics.paddingVertical}px ${metrics.paddingHorizontal}`,
-          // No loading o Figma colapsa o botão para a largura mínima.
-          width: fullWidth ? '100%' : loading ? metrics.minWidth : undefined,
-        }),
+    ...boxStyles,
     ...(vars as CSSProperties),
     ...style,
   };
 
   const icon = iconStart ?? iconEnd;
   const ariaLabel =
-    rest['aria-label'] ?? (iconOnly || loading ? (typeof children === 'string' ? children : undefined) : undefined);
+    rest['aria-label'] ??
+    (iconOnly || showSpinner ? (typeof children === 'string' ? children : undefined) : undefined);
 
   return (
     <button
@@ -223,32 +274,44 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={['mds-button', rest.className].filter(Boolean).join(' ')}
       style={inline}
       disabled={disabled || loading}
-      data-loading={loading || undefined}
+      data-loading={showSpinner || undefined}
+      data-anatomy={styles.anatomy}
       aria-busy={loading || undefined}
       aria-label={ariaLabel}
     >
-      {loading ? (
-        // Loading no Figma: só o spinner, sem label nem ícones.
-        <span className="mds-button__spinner" aria-hidden="true" />
-      ) : iconOnly ? (
-        <span className="mds-button__icon" aria-hidden="true">
-          {icon}
-        </span>
-      ) : (
-        <>
-          {iconStart != null && (
+      <span className="mds-button__content">
+        {showSpinner ? (
+          // Loading no Figma: só o spinner, sem label nem ícones.
+          <span className="mds-button__spinner" aria-hidden="true" />
+        ) : iconOnly && isBox ? (
+          <span className="mds-button__icon" aria-hidden="true">
+            {icon}
+          </span>
+        ) : iconOnly ? (
+          // Nas variantes inline (underline/text) o sublinhado fica sob o
+          // ícone — por isso o wrapper __label também no iconOnly.
+          <span className="mds-button__label">
             <span className="mds-button__icon" aria-hidden="true">
-              {iconStart}
+              {icon}
             </span>
-          )}
-          <span className="mds-button__label">{children}</span>
-          {iconEnd != null && (
-            <span className="mds-button__icon" aria-hidden="true">
-              {iconEnd}
-            </span>
-          )}
-        </>
-      )}
+          </span>
+        ) : (
+          <>
+            {loading && !styles.hasLoading && <span className="mds-button__spinner" aria-hidden="true" />}
+            {iconStart != null && !loading && (
+              <span className="mds-button__icon" aria-hidden="true">
+                {iconStart}
+              </span>
+            )}
+            <span className="mds-button__label">{children}</span>
+            {iconEnd != null && !loading && (
+              <span className="mds-button__icon" aria-hidden="true">
+                {iconEnd}
+              </span>
+            )}
+          </>
+        )}
+      </span>
     </button>
   );
 });

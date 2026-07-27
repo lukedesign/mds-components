@@ -46,10 +46,29 @@ Os componentes **nunca importam uma marca**: o objeto de tokens entra via
   `tokens.visual[papel]`; `feedback*`/`onFeedback*` → `tokens.feedback[papel]`;
   qualquer outro nome → `tokens.interface.*`. Estados herdam de `normal`
   (ex.: `carregando` só redefine `bgColor`).
-- **Nomenclatura PT dos valores de prop** (`preenchido`/`contornado`/
-  `naoPreenchido`, estados `emFoco`/`sobre`/...) — mantida idêntica aos
-  tokens/Figma para rastreabilidade. A prop de papel chama-se `colorRole`
-  (não `role`) para não colidir com o atributo ARIA no web.
+- **Nomenclatura do `variant` = nomes dos componentes do Figma** (decisão do
+  usuário em 2026-07-27): `filled` | `stroke` | `ghost` | `translucent` |
+  `underline` | `text` (Button/Global/* em "Prebuild Components"). As três
+  primeiras mapeiam 1:1 para os tokens PT (`VARIANT_TO_TOKEN` em
+  `core/src/button.ts`: filled→preenchido, stroke→contornado,
+  ghost→naoPreenchido); `translucent`/`underline`/`text` **não têm tokens
+  próprios na Fase 2** — são derivadas em `resolveButtonStyles` dos mesmos
+  tokens, com camadas de alpha/sublinhado medidos nos componentes do Figma:
+  - translucent: rest `preenchido.normal.bgColor` @25%; hover
+    `contornado.sobre.bgColor` @80%; pressed `sd` @25% + `bgColor` @40%
+    (compostos em rgba via `core/src/color.ts`); disabled
+    `onSurface` @30% com conteúdo a 60%; loading `carregando.bgColor` @25%.
+  - underline: sem caixa; sublinhado no labelArea com cores de contornado —
+    2px tracejado (rest) → 2px sólido (hover) → 4px tracejado (focus) → 4px
+    sólido (pressed); **sem estado loading no Figma** (`hasLoading: false`).
+  - text: idem underline sem sublinhado no rest; gap com ícone = `s-small`.
+  Os estados internos seguem PT (`emFoco`/`sobre`/...) porque vêm dos tokens.
+  A prop de papel chama-se `colorRole` (não `role`) para não colidir com o
+  atributo ARIA no web.
+- **Traço de caixa = `medium` (2px) em todos os estados** (medido no Figma:
+  o Stroke usa 2px também no rest, não 1.5px); sublinhados usam `medium`
+  (2px) e `large` (4px). Overlay sdPress: 25% no filled/ghost, 50% no
+  stroke.
 - **Tipografia dos tamanhos de botão**: os tokens de tamanho referenciam a
   escala crua (`{size.xSmall}`/`{lineHeight.xSmall}`) que não existe no dist;
   a ponte é `size.xSmall→label.large` e `size.xxSmall→label.small`

@@ -68,7 +68,10 @@ export const buttonRadiusMap = ${JSON.stringify(radiusMap, null, 2)} as const;
 
 export type ButtonStyleMode = keyof typeof buttonStyleMap;
 export type ButtonFamily = keyof (typeof buttonStyleMap)['default'];
-export type ButtonVariant = keyof (typeof buttonStyleMap)['default']['brand'];
+// Variante no vocabulário dos TOKENS (preenchido/contornado/naoPreenchido).
+// A prop pública \`variant\` usa os nomes do Figma (filled/stroke/ghost/...) —
+// ver VARIANT_TO_TOKEN em src/button.ts.
+export type ButtonTokenVariant = keyof (typeof buttonStyleMap)['default']['brand'];
 export type ButtonState = keyof (typeof buttonStyleMap)['default']['brand']['preenchido'];
 export type ButtonSize = keyof typeof buttonSizeMap;
 export type ButtonRadius = keyof typeof buttonRadiusMap;

@@ -33,7 +33,7 @@ const BRANDS = {
 
 type BrandKey = keyof typeof BRANDS;
 
-const VARIANTS: ButtonVariant[] = ['preenchido', 'contornado', 'naoPreenchido'];
+const VARIANTS: ButtonVariant[] = ['filled', 'stroke', 'ghost', 'translucent', 'underline', 'text'];
 const STYLE_MODES: ButtonStyleMode[] = ['default', 'alternate', 'inverse'];
 const FAMILY_ROWS: Array<{ family: ButtonFamily; role?: ButtonRole; title: string }> = [
   { family: 'brand', role: 'primary', title: 'brand / primary' },

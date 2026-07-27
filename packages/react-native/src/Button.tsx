@@ -10,9 +10,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
-  resolveButtonColors,
   resolveButtonMetrics,
   resolveButtonRadius,
+  resolveButtonStyles,
   type ButtonFamily,
   type ButtonRadius,
   type ButtonRole,
@@ -23,13 +23,8 @@ import {
 } from '@mds/components-core';
 import { useMdsTheme, toNumber } from './provider';
 
-// Larguras de traço da escala global de borderWidth do repo de tokens
-// (small = 1.5 para contorno; medium = 2 para a borda de foco, como no Figma).
-const STROKE_WIDTH = 1.5;
-const FOCUS_STROKE_WIDTH = 2;
-
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
-  /** Preenchimento: preenchido (fill), contornado (outline), naoPreenchido (texto). */
+  /** Variante do Figma: filled, stroke, ghost, translucent, underline ou text. */
   variant?: ButtonVariant;
   /** Família de cor: brand (papéis visuais), feedback ou neutral. */
   family?: ButtonFamily;
@@ -54,7 +49,7 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
 
 export const Button = forwardRef<View, ButtonProps>(function Button(
   {
-    variant = 'preenchido',
+    variant = 'filled',
     family = 'brand',
     colorRole,
     styleMode = 'default',
@@ -77,14 +72,18 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
   const [focused, setFocused] = useState(false);
 
   const role = colorRole ?? (family === 'feedback' ? 'info' : 'primary');
-  const colors = resolveButtonColors({ tokens, styleMode, family, role, variant });
+  const styles = resolveButtonStyles({ tokens, styleMode, family, role, variant });
   const metrics = resolveButtonMetrics(tokens, size);
+  const isBox = styles.anatomy === 'box';
+  const showSpinner = loading && styles.hasLoading;
   const borderRadius = toNumber(resolveButtonRadius(tokens, radius, radiusScale));
 
   const minHeight = toNumber(metrics.minHeight);
   const minWidth = toNumber(metrics.minWidth);
   const gap = toNumber(metrics.gap);
   const iconSize = toNumber(metrics.iconSize);
+  const rootGap = isBox ? 0 : variant === 'text' ? toNumber(tokens.gap['s-small']) : gap;
+  const labelPad = isBox ? gap : 0;
 
   const stateOf = (pressed: boolean): ButtonState => {
     if (disabled) return 'desabilitado';
@@ -95,37 +94,46 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
   };
 
   const containerStyle = (pressed: boolean): StyleProp<ViewStyle> => {
-    const state = stateOf(pressed);
-    const c = colors[state];
-    const strokeWidth = state === 'emFoco' ? FOCUS_STROKE_WIDTH : STROKE_WIDTH;
+    const c = styles.states[stateOf(pressed)];
     return [
       {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
+        gap: rootGap,
         alignSelf: fullWidth && !iconOnly ? 'stretch' : 'flex-start',
-        minHeight,
-        borderRadius,
         backgroundColor: c.bgColor ?? 'transparent',
-        borderWidth: c.strokeColor ? strokeWidth : 0,
+        borderWidth: c.strokeColor ? (c.strokeWidth ?? 0) : 0,
         borderColor: c.strokeColor ?? 'transparent',
-        ...(iconOnly
-          ? // iconOnly no Figma: quadrado minH × minH, padding zero.
-            { width: minHeight, paddingVertical: 0, paddingHorizontal: 0 }
-          : {
-              minWidth,
-              paddingVertical: toNumber(metrics.paddingVertical),
-              paddingHorizontal: toNumber(metrics.paddingHorizontal),
-              // No loading o Figma colapsa o botão para a largura mínima.
-              ...(loading ? { width: minWidth } : null),
-            }),
+        ...(isBox
+          ? {
+              minHeight,
+              borderRadius,
+              ...(iconOnly
+                ? // iconOnly no Figma: quadrado minH × minH, padding zero.
+                  { width: minHeight }
+                : {
+                    minWidth,
+                    paddingVertical: toNumber(metrics.paddingVertical),
+                    paddingHorizontal: toNumber(metrics.paddingHorizontal),
+                    // No loading o Figma colapsa o botão para a largura mínima.
+                    ...(showSpinner ? { width: minWidth } : null),
+                  }),
+            }
+          : null),
       },
       style,
     ];
   };
 
   const icon = iconStart ?? iconEnd;
+
+  const iconBox = (node: ReactNode) => (
+    <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+      {node}
+    </View>
+  );
 
   return (
     <Pressable
@@ -144,60 +152,60 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
       accessibilityState={{ disabled: !!disabled, busy: loading }}
       accessibilityLabel={
         rest.accessibilityLabel ??
-        ((iconOnly || loading) && typeof children === 'string' ? children : undefined)
+        ((iconOnly || showSpinner) && typeof children === 'string' ? children : undefined)
       }
       style={({ pressed }) => containerStyle(pressed)}
     >
       {({ pressed }) => {
-        const state = colors[stateOf(pressed)];
-        const fg = state.labelColor ?? colors.normal.labelColor;
-        const showPressOverlay = stateOf(pressed) === 'pressionado' && state.sdColor;
+        const c = styles.states[stateOf(pressed)];
+        const fg = c.labelColor ?? styles.states.normal.labelColor;
+        const contentOpacity = c.contentOpacity ?? 1;
+        // labelArea: sublinhado das variantes underline/text (sob o ícone no
+        // iconOnly, como no Figma).
+        const underlineStyle: ViewStyle = c.underline
+          ? {
+              borderBottomWidth: c.underline.width,
+              borderBottomColor: c.underline.color,
+              borderStyle: c.underline.style,
+            }
+          : {};
         return (
           <>
-            {loading ? (
+            {showSpinner ? (
               // Loading no Figma: só o spinner, sem label nem ícones.
               <ActivityIndicator size="small" color={fg} />
             ) : iconOnly ? (
-              <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-                {icon}
-              </View>
+              <View style={[{ opacity: contentOpacity }, underlineStyle]}>{iconBox(icon)}</View>
             ) : (
-              <>
-                {iconStart != null && (
-                  <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-                    {iconStart}
-                  </View>
-                )}
-                {typeof children === 'string' ? (
-                  <Text
-                    style={[
-                      {
-                        // labelArea do Figma: respiro lateral do texto = gap.
-                        paddingHorizontal: gap,
-                        color: fg,
-                        fontFamily: metrics.typography.fontFamily,
-                        fontSize: toNumber(metrics.typography.fontSize),
-                        fontWeight: String(metrics.typography.fontWeight) as TextStyle['fontWeight'],
-                        lineHeight: toNumber(metrics.typography.lineHeight),
-                        letterSpacing: toNumber(metrics.typography.kerning),
-                      },
-                      labelStyle,
-                    ]}
-                  >
-                    {children}
-                  </Text>
-                ) : (
-                  children
-                )}
-                {iconEnd != null && (
-                  <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-                    {iconEnd}
-                  </View>
-                )}
-              </>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: rootGap, opacity: contentOpacity }}>
+                {loading && !styles.hasLoading && <ActivityIndicator size="small" color={fg} />}
+                {iconStart != null && !loading && iconBox(iconStart)}
+                <View style={[{ paddingHorizontal: labelPad }, underlineStyle]}>
+                  {typeof children === 'string' ? (
+                    <Text
+                      style={[
+                        {
+                          color: fg,
+                          fontFamily: metrics.typography.fontFamily,
+                          fontSize: toNumber(metrics.typography.fontSize),
+                          fontWeight: String(metrics.typography.fontWeight) as TextStyle['fontWeight'],
+                          lineHeight: toNumber(metrics.typography.lineHeight),
+                          letterSpacing: toNumber(metrics.typography.kerning),
+                        },
+                        labelStyle,
+                      ]}
+                    >
+                      {children}
+                    </Text>
+                  ) : (
+                    children
+                  )}
+                </View>
+                {iconEnd != null && !loading && iconBox(iconEnd)}
+              </View>
             )}
-            {showPressOverlay ? (
-              // Overlay do estado pressionado (sdPress no Figma): sdColor a 25%.
+            {stateOf(pressed) === 'pressionado' && c.sdColor ? (
+              // Overlay do estado pressionado (sdPress no Figma).
               <View
                 pointerEvents="none"
                 style={{
@@ -206,9 +214,9 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
                   right: 0,
                   bottom: 0,
                   left: 0,
-                  backgroundColor: state.sdColor,
-                  opacity: 0.25,
-                  borderRadius,
+                  backgroundColor: c.sdColor,
+                  opacity: c.sdOpacity ?? 0.25,
+                  borderRadius: isBox ? borderRadius : 0,
                 }}
               />
             ) : null}
