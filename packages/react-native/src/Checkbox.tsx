@@ -43,7 +43,9 @@ export const Checkbox = forwardRef<View, CheckboxProps>(function Checkbox(
   const isChecked = checked ?? innerChecked;
 
   const toggle = () => {
-    const next = !(isChecked || indeterminate);
+    // Mesmo comportamento do checkbox nativo: `indeterminate` é só visual, o
+    // toque alterna `checked`. Num "selecionar todos" parcial, MARCA todos.
+    const next = !isChecked;
     if (checked === undefined) setInnerChecked(next);
     onChange?.(next);
   };

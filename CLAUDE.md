@@ -151,6 +151,10 @@ Os componentes **nunca importam uma marca**: o objeto de tokens entra via
       `visual.*`.
     - `Selector`: linha controle+texto em 5 tamanhos (controle 20/20/24/24/
       32; texto 12/20, 14/20, 16/24, 18/24, 18/32, cor `onSurface`).
+    - **Clique no checkbox `indeterminate` MARCA** (não desmarca) — o Figma
+      só define o visual do estado; seguimos o `<input type="checkbox">`
+      nativo, onde `indeterminate` é puramente visual e o clique alterna
+      `checked`. É o comportamento esperado num "selecionar todos" parcial.
     - `StepHelper`: checklist idle/checking/alert/unchecked/checked — ícones
       12px nas cores caution/critical/success; texto 12/16 `onBackground`.
     - No RN os glifos sem SVG são desenhados com Views/Text (check ✓,

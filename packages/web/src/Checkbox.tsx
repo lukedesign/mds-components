@@ -47,7 +47,10 @@ export const Checkbox = forwardRef<HTMLButtonElement, CheckboxProps>(function Ch
   const s = resolveCheckboxStyles(tokens, feedback)[state];
 
   const toggle = () => {
-    const next = !(isChecked || indeterminate);
+    // Mesmo comportamento do <input type="checkbox"> nativo: `indeterminate`
+    // é só visual, o clique alterna `checked`. Num "selecionar todos" parcial
+    // (mixed + não marcado), clicar MARCA todos — não desmarca.
+    const next = !isChecked;
     if (checked === undefined) setInnerChecked(next);
     onChange?.(next);
   };
