@@ -1,0 +1,63 @@
+name: Deploy Storybook to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Este repo consome "@mds/tokens": "file:../mds-tokens" — o repo de
+      # tokens precisa existir como IRMÃO e ter dist/ buildado, igual ao
+      # setup local. Se mds-tokens for privado, troque `token:` por um PAT
+      # com acesso de leitura a ele (secrets.TOKENS_REPO_PAT).
+      - uses: actions/checkout@v4
+        with:
+          path: mds-components
+
+      - uses: actions/checkout@v4
+        with:
+          repository: lukedesign/mds-tokens
+          path: mds-tokens
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build design tokens
+        working-directory: mds-tokens
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Storybook
+        working-directory: mds-components
+        run: |
+          npm install
+          npm run typecheck
+          npm run storybook:build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: mds-components/storybook-static
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

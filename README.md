@@ -36,11 +36,30 @@ light/dark do build do repo de tokens funcionam sem mudança de código).
 ## Comandos
 
 ```bash
-npm install          # instala tudo (workspaces + link p/ ../mds-tokens)
-npm run dev          # playground Vite (localhost:5173)
-npm run typecheck    # tsc em todos os pacotes
-npm run sync-tokens  # regenera packages/core/src/generated/button-tokens.ts
+npm install           # instala tudo (workspaces + link p/ ../mds-tokens)
+npm run storybook     # Storybook dos componentes (localhost:6007)
+npm run storybook:build  # build estático em storybook-static/
+npm run dev           # playground Vite (localhost:5173)
+npm run typecheck     # tsc em todos os pacotes
+npm run sync-tokens   # regenera packages/core/src/generated/button-tokens.ts
 ```
+
+## Storybook
+
+`npm run storybook` sobe a documentação viva dos componentes. A toolbar tem
+três seletores globais — **Marca** (as 8 do build), **Modo** (light/dark) e
+**Radii** (`base`/`producao`) — e um decorator envolve toda story em
+`<MdsProvider>`, então a troca vale para todas as stories de uma vez.
+
+As stories ficam ao lado dos componentes (`packages/web/src/*.stories.tsx`) e
+a documentação em MDX em `src/docs/`. O push para `main` publica no GitHub
+Pages via [.github/workflows/storybook.yml](.github/workflows/storybook.yml),
+que faz checkout do `mds-tokens` como repo irmão e roda o build de tokens
+antes.
+
+> **Atenção:** 5 das 8 marcas (Class, Luggo, CO, Sensia, Urba) hoje têm
+> `light` e `dark` **idênticos** nos tokens de origem — trocar o modo nelas
+> não muda nada. Isso é dado de origem do Figma, não do Storybook.
 
 > O repo de tokens precisa estar em `../mds-tokens` **com `dist/` buildado**
 > (`npm run build` lá) — o playground importa `@mds/tokens/web/*` direto do

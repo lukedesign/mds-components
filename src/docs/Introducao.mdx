@@ -1,0 +1,58 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Introdução" />
+
+# MDS — Components
+
+Componentes do Design System multimarcas. Tudo que você vê aqui é estilizado
+**exclusivamente** pelos design tokens do repositório
+[`mds-tokens`](https://github.com/lukedesign/mds-tokens) — não há cor, medida
+ou tipografia escrita à mão nos componentes.
+
+## Marca, modo e raio na toolbar
+
+Os três seletores no topo trocam o contexto de **todas** as stories:
+
+- **Marca** — as 8 marcas do build (MRV, Sensia, Luggo, CO, Class, MDC, Urba,
+  SuperApp).
+- **Modo** — `light` / `dark`.
+- **Radii** — escala de raio de `01-radii` (`base` = a do Figma; `producao`
+  dobra os valores).
+
+Por baixo, cada story é envolvida por `<MdsProvider tokens={...}>`: os
+componentes **nunca importam uma marca**, eles recebem o objeto de tokens por
+contexto. É por isso que a troca de marca funciona sem nenhum código
+condicional dentro dos componentes.
+
+## Como consumir
+
+```tsx
+import { MdsProvider, Button, Input } from '@mds/components-web';
+import { light } from '@mds/tokens/web/mrv';
+
+<MdsProvider tokens={light.tokens} radiusScale="base">
+  <Button variant="filled" family="brand" colorRole="primary">Continuar</Button>
+  <Input label="Nome" helperText="Como aparece no documento" />
+</MdsProvider>
+```
+
+Para React Native é a mesma API, importando de `@mds/components-react-native`
+e `@mds/tokens/react-native/<marca>`.
+
+## Vocabulário
+
+As variantes usam **os nomes dos componentes do Figma** (`filled`, `stroke`,
+`ghost`, `translucent`, `underline`, `text`), enquanto os estados internos
+seguem os nomes dos tokens em português (`normal`, `sobre`, `emFoco`,
+`ativo`, `pressionado`, `desabilitado`, `carregando`) — assim dá para rastrear
+qualquer valor daqui até o token de origem.
+
+Nos campos, `feedback` é um **papel** (`info` / `success` / `caution` /
+`critical`), não um booleano de erro: o Figma vincula `{feedback}` genérico, o
+que permite usar o mesmo campo para aviso, sucesso ou erro.
+
+## Origem dos valores
+
+Rodar `npm run build` no repo de tokens é pré-requisito: o Storybook lê
+`dist/web/<marca>/<modo>.ts` em tempo de execução. Se você editar
+`00-tokens/` sem rebuildar, as stories continuam mostrando os valores antigos.

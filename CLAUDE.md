@@ -30,7 +30,22 @@ Monorepo npm workspaces:
   dimensões.
 - **`apps/playground`** — Vite, importa as 8 marcas de `@mds/tokens/web/*` e
   monta a matriz completa de variantes. É a ferramenta de verificação visual
-  (`npm run dev`).
+  rápida (`npm run dev`).
+- **Storybook** (`npm run storybook`, porta 6007) — documentação viva:
+  `.storybook/main.ts` lê `packages/web/src/**/*.stories.tsx` + `src/docs/**/
+  *.mdx`; `.storybook/preview.tsx` define os globals **Marca/Modo/Radii** na
+  toolbar e um decorator que envolve toda story em `<MdsProvider>` (o mesmo
+  contrato do consumidor real). `.storybook/brands.ts` centraliza o import
+  estático das 8 marcas.
+  - `preview.tsx` **precisa de `import React`**: o arquivo de preview é
+    transpilado fora do plugin React do Vite, sem JSX runtime automático
+    (sem isso, toda story quebra com "React is not defined").
+  - `viteFinal` repete o `optimizeDeps.exclude` do playground para
+    `@mds/tokens` e os pacotes do workspace (fonte .ts via symlink).
+  - Publicação: `.github/workflows/storybook.yml` faz checkout de
+    `lukedesign/mds-tokens` como repo irmão, roda o build de tokens e
+    depois `storybook:build`. Se o repo de tokens virar privado, o checkout
+    precisa de um PAT.
 
 Os componentes **nunca importam uma marca**: o objeto de tokens entra via
 `MdsProvider`. Por isso `@mds/tokens` só é dependência do playground.
