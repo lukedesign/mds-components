@@ -42,6 +42,15 @@ Monorepo npm workspaces:
     (sem isso, toda story quebra com "React is not defined").
   - `viteFinal` repete o `optimizeDeps.exclude` do playground para
     `@mds/tokens` e os pacotes do workspace (fonte .ts via symlink).
+  - **Fontes**: os tokens só declaram o NOME da família (`00-fontFamily`) —
+    carregar o arquivo é responsabilidade da aplicação. `.storybook/
+    preview-head.html` e `apps/playground/index.html` usam a mesma
+    estratégia: `@font-face` apontando para `public/fonts/*` (auto-hospedado,
+    servido em `/fonts/*` via `staticDirs` no Storybook e `publicDir` no
+    playground) + Google Fonts como fallback da Outfit. As duas famílias em
+    uso são **Outfit** (7 marcas) e **Aileron** (só MDC) — a Aileron **não
+    está no Google Fonts**, então sem o arquivo em `public/fonts/` as stories
+    em MDC caem no fallback do sistema. Ver `public/fonts/README.md`.
   - Publicação: `.github/workflows/storybook.yml` faz checkout de
     `lukedesign/mds-tokens` como repo irmão, roda o build de tokens e
     depois `storybook:build`. Se o repo de tokens virar privado, o checkout

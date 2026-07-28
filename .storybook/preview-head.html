@@ -1,0 +1,52 @@
+<!--
+  Fontes do Design System.
+
+  As famílias vêm dos tokens (`00-fontFamily`): Outfit para 7 marcas e
+  Aileron para a MDC. Os componentes só declaram o NOME da família — quem
+  precisa carregar o arquivo é a aplicação (aqui, o Storybook).
+
+  Ordem de resolução abaixo:
+  1. Arquivos auto-hospedados em `public/fonts/` (preferencial: funciona
+     offline, sem CDN, e é o único caminho para a Aileron, que não está no
+     Google Fonts). Veja public/fonts/README.md.
+  2. Google Fonts como fallback da Outfit, para o Storybook não ficar sem a
+     fonte enquanto os arquivos locais não estiverem no repo.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  /* Auto-hospedadas — declaradas depois do link acima para terem prioridade.
+     Se o arquivo não existir, o navegador ignora a regra e cai no Google
+     Fonts (Outfit) ou no fallback do sistema (Aileron). */
+  @font-face {
+    font-family: 'Outfit';
+    src: url('/fonts/Outfit-Variable.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Aileron';
+    src: url('/fonts/Aileron-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Aileron';
+    src: url('/fonts/Aileron-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Aileron';
+    src: url('/fonts/Aileron-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+</style>

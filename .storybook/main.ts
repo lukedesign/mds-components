@@ -5,6 +5,9 @@ const config: StorybookConfig = {
   stories: ['../packages/web/src/**/*.stories.tsx', '../src/docs/**/*.mdx'],
   addons: ['@storybook/addon-docs'],
   framework: '@storybook/react-vite',
+  // Fontes auto-hospedadas ficam em public/fonts e são servidas em /fonts/*
+  // (ver .storybook/preview-head.html e public/fonts/README.md).
+  staticDirs: ['../public'],
   docs: {
     defaultName: 'Docs',
   },
