@@ -1,3 +1,37 @@
+# ⚠️ Repositório arquivado — o MDS agora vive em um repo único
+
+Os componentes foram unificados com os design tokens num único repositório:
+
+### 👉 **[lukedesign/mds-design-system](https://github.com/lukedesign/mds-design-system)**
+
+### 📖 Documentação: **https://lukedesign.github.io/mds-design-system/**
+
+O conteúdo deste repo está lá na raiz (`packages/core`, `packages/web`,
+`packages/react-native`, `apps/playground`), **com todo o histórico de commits
+preservado** — nada foi perdido na migração.
+
+## Por quê
+
+Este repo consumia o de tokens por uma dependência `file:` apontando para um
+repo irmão, e o CI precisava clonar os dois para conseguir buildar. Eram
+inseparáveis na prática, separados só no nível do git.
+
+Juntando, três coisas melhoraram de uma vez:
+
+- A lista das 8 marcas existia em **três cópias sincronizadas à mão** (duas
+  delas aqui, em `.storybook/brands.ts` e no repo de tokens). Agora é um
+  arquivo só, e marca nova aparece na toolbar sozinha depois do build.
+- Eram **dois Storybooks**, cada um com sua própria toolbar de marca — um
+  explicando de onde vem cada cor, outro mostrando os componentes. Agora é um
+  só, e a mesma seleção vale para as duas coisas.
+- O CI fazia checkout duplo (este repo + o de tokens). Agora é um checkout.
+
+Este repositório não recebe mais atualizações. Abra issues e PRs no repo novo.
+
+---
+
+<sub>Conteúdo original abaixo, para referência histórica.</sub>
+
 # MDS — Components (multimarcas)
 
 Componentes do Design System multimarcas, consumindo os tokens de
